@@ -36,15 +36,15 @@ class Field(ABC):
 
 
 def crystal_prop(
-        pump_profile,
-        pump,
-        signal_field,
-        idler_field,
+        pump_profile: Beam_profile,
+        pump: Beam,
+        signal_field: Field,
+        idler_field: Field,
         vacuum_states,
-        interaction,
-        poling_period,
+        interaction: Interaction,
+        poling_period, 
         N,
-        crystal_hologram,
+        crystal_hologram: Crystal_hologram,
         infer=None,
         signal_init=None,
         idler_init=None
@@ -61,7 +61,10 @@ def crystal_prop(
     idler_field: A class that holds everything to do with the interaction values of the idler beam
     vacuum_states: The vacuum and interaction fields
     interaction: A class that represents the SPDC interaction process, on all of its physical parameters.
-    poling_period: Poling period (dk_offset * delta_k)
+    poling_period: Poling period (dk_offset * delta_k) :=
+      # = interaction.dk_offset * self.delta_k, 
+      delta_k= pump.k - signal.k - idler.k  
+      # phase  mismatch
     N: number of vacuum_state elements
     crystal_hologram: 3D crystal hologram
     infer: (True/False) if in inference mode, we include more coefficients in the poling
