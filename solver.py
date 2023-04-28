@@ -1,6 +1,7 @@
+#%%
 from abc import ABC
 from jax import jit
-from spdc_inv.utils.utils import h_bar, eps0, c
+import math
 
 import jax.numpy as np
 
@@ -9,10 +10,87 @@ import jax.random as random
 import os
 
 from jax.ops import index_update
-from spdc_inv.data.utils import n_KTP_Kato, nz_MgCLN_Gayer
-from spdc_inv.utils.utils import SFG_idler_wavelength
-from spdc_inv.utils.defaults import REAL, IMAG
 from typing import Dict
+
+# Constants:
+pi      = np.pi
+c       = 2.99792458e8  # speed of light [meter/sec]
+eps0    = 8.854187817e-12  # vacuum permittivity [Farad/meter]
+h_bar   = 1.054571800e-34  # [m^2 kg / s], taken from http://physics.nist.gov/cgi-bin/cuu/Value?hbar|search_for=planck
+
+REAL = 'real'
+IMAG = 'imag'
+# lambda functions:
+G1_Normalization        = lambda w: h_bar * w / (2 * eps0 * c)
+I                       = lambda A, n: 2 * n * eps0 * c * np.abs(A) ** 2  # Intensity
+Power2D                 = lambda A, n, dx, dy: np.sum(I(A, n)) * dx * dy
+
+# Compute the idler wavelength given pump and signal
+SFG_idler_wavelength    = lambda lambda_p, lambda_s: lambda_p * lambda_s / (lambda_s - lambda_p)
+
+
+def nz_MgCLN_Gayer(
+        lam: float,
+        T: float,
+        ax: str=None,
+):
+    """
+    Refractive index for MgCLN, based on Gayer et al, APB 2008
+
+    Parameters
+    ----------
+    lam: wavelength (lambda) [um]
+    T: Temperature [Celsius Degrees]
+    ax: polarization
+
+    Returns
+    -------
+    nz: Refractive index on z polarization
+
+    """
+    a = np.array([5.756, 0.0983, 0.2020, 189.32, 12.52, 1.32 * 10 ** (-2)])
+    b = np.array([2.860 * 10 ** (-6), 4.700 * 10 ** (-8), 6.113 * 10 ** (-8), 1.516 * 10 ** (-4)])
+    f = (T - 24.5) * (T + 570.82)
+
+    n1 = a[0]
+    n2 = b[0] * f
+    n3 = (a[1] + b[1] * f) / (lam ** 2 - (a[2] + b[2] * f) ** 2)
+    n4 = (a[3] + b[3] * f) / (lam ** 2 - (a[4]) ** 2)
+    n5 = -a[5] * lam ** 2
+
+    nz = np.sqrt(n1 + n2 + n3 + n4 + n5)
+    return nz
+
+
+def n_KTP_Kato(
+        lam: float,
+        T: float,
+        ax: str,
+):
+    """
+    Refractive index for KTP, based on K. Kato
+
+    Parameters
+    ----------
+    lam: wavelength (lambda) [um]
+    T: Temperature [Celsius Degrees]
+    ax: polarization
+
+    Returns
+    -------
+    n: Refractive index
+
+    """
+    assert ax in ['z', 'y'], 'polarization must be either z or y'
+    dT = (T - 20)
+    if ax == "z":
+        n_no_T_dep = np.sqrt(4.59423 + 0.06206 / (lam ** 2 - 0.04763) + 110.80672 / (lam ** 2 - 86.12171))
+        dn         = (0.9221 / lam ** 3 - 2.9220 / lam ** 2 + 3.6677 / lam - 0.1897) * 1e-5 * dT
+    if ax == "y":
+        n_no_T_dep = np.sqrt(3.45018 + 0.04341 / (lam ** 2 - 0.04597) + 16.98825 / (lam ** 2 - 39.43799))
+        dn         = (0.1997 / lam ** 3 - 0.4063 / lam ** 2 + 0.5154 / lam + 0.5425) * 1e-5 * dT
+    n           = n_no_T_dep + dn
+    return n
 
 def Hermite_gauss(lam, refractive_index, W0, nx, ny, z, X, Y, coef=None):
     """
@@ -1196,3 +1274,58 @@ def propagate(A, x, y, k, dz):
     Eout = np.fft.ifft2(F)  # [in real space]. E1 is the two-dimensional INVERSE discrete Fourier transform (DFT) of F1
 
     return Eout
+
+
+
+print("hello")
+interaction = Interaction()
+
+pump_profile = Beam_profile(
+    pump_coeffs_real=np.array([1]),
+    pump_coeffs_imag=np.array([1]),
+    waist_pump=np.array([0]),
+    power_pump=1,
+    x=np.array([1]),
+    y=np.array([1]),
+    dx=1,
+    dy=1,
+    max_mode1=1,
+    max_mode2=1,
+    pump_basis="lg",
+    lam_pump = 1,
+    refractive_index=np.array([1]))
+
+pump = Beam(lam=1,ctype=lambda x,T,polarization: 1, polarization="x", T=1, power=1)
+
+idler_field = Field(beam = pump,dx=1,dy=1,maxZ=1)
+
+signal_field = Field(beam = pump,dx=1,dy=1,maxZ=1)
+
+vacuum_states = np.ones((1,1,1))
+
+poling_period = 1
+N = 1
+
+crystal_hologram = Crystal_hologram(
+    crystal_coeffs_real=np.array([1]),
+    crystal_coeffs_imag=np.array([1]),
+    r_scale=np.array([1]),
+    x=np.array([1]),
+    y=np.array([1]),
+    max_mode1=1,
+    max_mode2=1,
+    crystal_basis="lg",
+    lam_signal = 1,
+    refractive_index=np.array([1]))
+
+crystal_prop(
+        pump_profile,
+        pump,
+        signal_field,
+        idler_field,
+        vacuum_states,
+        interaction,
+        poling_period, 
+        N,
+        crystal_hologram,
+        infer=False)
