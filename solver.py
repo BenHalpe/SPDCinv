@@ -290,6 +290,7 @@ class Beam_profile(ABC):
                     idx += 1
 
             self.E = self._profile_laguerre_gauss(pump_coeffs_real, pump_coeffs_imag, waist_pump)
+            
 
         elif self.pump_basis.lower() == "hg":  # Hermite-Gauss
             self.coef = np.zeros(len(waist_pump), dtype=np.float32)
@@ -308,34 +309,34 @@ class Beam_profile(ABC):
 
 
     def create_profile(self, pump_coeffs_real, pump_coeffs_imag, waist_pump):
-        # if self.learn_pump:
-        #     if self.pump_basis.lower() == 'lg':  # Laguerre-Gauss
-        #         if self.learn_pump_coeffs and self.learn_pump_waists:
-        #             self.E = self._profile_laguerre_gauss(
-        #                 pump_coeffs_real, pump_coeffs_imag, waist_pump
-        #             )
-        #         elif self.learn_pump_coeffs:
-        #             self.E = self._profile_laguerre_gauss(
-        #                 pump_coeffs_real, pump_coeffs_imag, self.waist_pump
-        #             )
-        #         else:
-        #             self.E = self._profile_laguerre_gauss(
-        #                 self.pump_coeffs_real, self.pump_coeffs_imag, waist_pump
-        #             )
+        if self.learn_pump:
+            if self.pump_basis.lower() == 'lg':  # Laguerre-Gauss
+                if self.learn_pump_coeffs and self.learn_pump_waists:
+                    self.E = self._profile_laguerre_gauss(
+                        pump_coeffs_real, pump_coeffs_imag, waist_pump
+                    )
+                elif self.learn_pump_coeffs:
+                    self.E = self._profile_laguerre_gauss(
+                        pump_coeffs_real, pump_coeffs_imag, self.waist_pump
+                    )
+                else:
+                    self.E = self._profile_laguerre_gauss(
+                        self.pump_coeffs_real, self.pump_coeffs_imag, waist_pump
+                    )
 
-        #     elif self.pump_basis.lower() == 'hg':  # Hermite-Gauss
-        #         if self.learn_pump_coeffs and self.learn_pump_waists:
-        #             self.E = self._profile_hermite_gauss(
-        #                 pump_coeffs_real, pump_coeffs_imag, waist_pump
-        #             )
-        #         elif self.learn_pump_coeffs:
-        #             self.E = self._profile_hermite_gauss(
-        #                 pump_coeffs_real, pump_coeffs_imag, self.waist_pump
-        #             )
-        #         else:
-        #             self.E = self._profile_hermite_gauss(
-        #                 self.pump_coeffs_real, self.pump_coeffs_imag, waist_pump
-        #             )
+            elif self.pump_basis.lower() == 'hg':  # Hermite-Gauss
+                if self.learn_pump_coeffs and self.learn_pump_waists:
+                    self.E = self._profile_hermite_gauss(
+                        pump_coeffs_real, pump_coeffs_imag, waist_pump
+                    )
+                elif self.learn_pump_coeffs:
+                    self.E = self._profile_hermite_gauss(
+                        pump_coeffs_real, pump_coeffs_imag, self.waist_pump
+                    )
+                else:
+                    self.E = self._profile_hermite_gauss(
+                        self.pump_coeffs_real, self.pump_coeffs_imag, waist_pump
+                    )
         return
 
     def _profile_laguerre_gauss(
@@ -1278,48 +1279,103 @@ def propagate(A, x, y, k, dz):
 
 
 print("hello")
+
+# def run_experiment(
+#         tau: float = 1e-9,
+#         SMF_waist: float = 2.18e-6,
+#         decay_rate: float = 0.5,
+#         pump_basis: str = 'LG',
+#         pump_max_mode1: int = 5,
+#         pump_max_mode2: int = 1,
+#         initial_pump_coefficient: str = 'random',
+#         custom_pump_coefficient: Dict[str, Dict[int, int]] = None,
+#         pump_coefficient_path: str = None,
+#         initial_pump_waist: str = 'waist_pump0',
+#         pump_waists_path: str = None,
+#         crystal_basis: str = 'LG',
+#         crystal_max_mode1: int = 5,
+#         crystal_max_mode2: int = 2,
+#         initial_crystal_coefficient: str = 'random',
+#         custom_crystal_coefficient: Dict[str, Dict[int, int]] = None,
+#         crystal_coefficient_path: str = None,
+#         initial_crystal_waist: str = 'r_scale0',
+#         crystal_waists_path: str = None,
+#         lam_pump: float = 405e-9,
+#         crystal_str: str = 'ktp',
+#         power_pump: float = 1e-3,
+#         waist_pump0: float = 40e-6,
+#         r_scale0: float = 40e-6,
+#         dx: float = 4e-6,
+#         dy: float = 4e-6,
+#         dz: float = 10e-6,
+#         maxX: float = 120e-6,
+#         maxY: float = 120e-6,
+#         maxZ: float = 1e-4,
+#         R: float = 0.1,
+#         Temperature: float = 50,
+#         pump_polarization: str = 'y',
+#         signal_polarization: str = 'y',
+#         idler_polarization: str = 'z',
+#         dk_offset: float = 1.,
+#         power_signal: float = 1.,
+#         power_idler: float = 1.,
+#         coincidence_projection_basis: str = 'LG',
+#         coincidence_projection_max_mode1: int = 1,
+#         coincidence_projection_max_mode2: int = 4,
+#         coincidence_projection_waist: float = None,
+#         coincidence_projection_wavelength: float = None,
+#         coincidence_projection_polarization: str = 'y',
+#         coincidence_projection_z: float = 0.,
+#         tomography_projection_basis: str = 'LG',
+#         tomography_projection_max_mode1: int = 1,
+#         tomography_projection_max_mode2: int = 1,
+#         tomography_projection_waist: float = None,
+#         tomography_projection_wavelength: float = None,
+#         tomography_projection_polarization: str = 'y',
+#         tomography_projection_z: float = 0.,
+
 interaction = Interaction()
 
 pump_profile = Beam_profile(
     pump_coeffs_real=np.array([1]),
     pump_coeffs_imag=np.array([1]),
-    waist_pump=np.array([0]),
-    power_pump=1,
-    x=np.array([1]),
-    y=np.array([1]),
-    dx=1,
-    dy=1,
-    max_mode1=1,
-    max_mode2=1,
-    pump_basis="lg",
-    lam_pump = 1,
+    waist_pump=np.array([1]),
+    power_pump = interaction.power_pump,
+    x=interaction.x,
+    y=interaction.y,
+    dx=interaction.dx,
+    dy=interaction.dy,
+    max_mode1 = interaction.pump_max_mode1,
+    max_mode2 = interaction.pump_max_mode2,
+    pump_basis=interaction.pump_basis,
+    lam_pump = interaction.lam_pump,
     refractive_index=np.array([1]))
 
 pump = Beam(lam=1,ctype=lambda x,T,polarization: 1, polarization="x", T=1, power=1)
 
-idler_field = Field(beam = pump,dx=1,dy=1,maxZ=1)
+idler_field = Field(beam = pump,dx=interaction.dx,dy=interaction.dy,maxZ=1)
 
-signal_field = Field(beam = pump,dx=1,dy=1,maxZ=1)
+signal_field = Field(beam = pump,dx=interaction.dx,dy=interaction.dy,maxZ=1)
 
 vacuum_states = np.ones((1,1,1))
 
-poling_period = 1
-N = 1
+poling_period = 0
+N = 0
 
 crystal_hologram = Crystal_hologram(
     crystal_coeffs_real=np.array([1]),
     crystal_coeffs_imag=np.array([1]),
     r_scale=np.array([1]),
-    x=np.array([1]),
-    y=np.array([1]),
-    max_mode1=1,
-    max_mode2=1,
+    x=interaction.x,
+    y=interaction.y,
+    max_mode1=5,
+    max_mode2=2,
     crystal_basis="lg",
     lam_signal = 1,
     refractive_index=np.array([1]))
 
-crystal_prop(
-        pump_profile,
+A = crystal_prop(
+        pump_profile.E,
         pump,
         signal_field,
         idler_field,
@@ -1327,5 +1383,9 @@ crystal_prop(
         interaction,
         poling_period, 
         N,
-        crystal_hologram,
-        infer=False)
+        crystal_hologram.crystal_profile)
+
+# print(pump_profile.E[0][0][0])
+# print(crystal_hologram.crystal_profile)
+# print(interaction)
+print(A[1])
