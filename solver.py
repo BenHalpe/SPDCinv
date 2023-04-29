@@ -1360,7 +1360,7 @@ signal_field = Field(beam = pump,dx=interaction.dx,dy=interaction.dy,maxZ=1)
 vacuum_states = np.ones((1,1,1))
 
 poling_period = 0
-N = 0
+N = 1
 
 crystal_hologram = Crystal_hologram(
     crystal_coeffs_real=np.array([1]),
@@ -1388,4 +1388,4 @@ A = crystal_prop(
 # print(pump_profile.E[0][0][0])
 # print(crystal_hologram.crystal_profile)
 # print(interaction)
-print(A[1])
+print(A)
