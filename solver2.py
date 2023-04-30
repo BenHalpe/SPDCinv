@@ -176,7 +176,7 @@ def crystal_prop(
 
     for i in range(shape.Nz):
         signal_out, signal_vac, idler_out, idler_vac = propagate_dz(
-            pump_profile[:,:,i],
+            pump_profile,
             x,
             y,
             z[i],
@@ -319,7 +319,7 @@ def propagate(A, x, y, k, dz):
 
 print("Hello World!")
 shape = Shape()
-pump_profile = np.ones((shape.Nx,shape.Ny,shape.Nz))
+pump_profile = np.ones((shape.Nx,shape.Ny))
 chi2 = np.ones((shape.Nx,shape.Ny,shape.Nz))
 pump = Beam(lam=1,ctype=lambda x,T,polarization: 1, polarization="x", T=1, power=1)
 idler_field = Field(beam = pump,dx=shape.dx,dy=shape.dy,maxZ=shape.maxZ)

@@ -1374,18 +1374,18 @@ crystal_hologram = Crystal_hologram(
     lam_signal = 1,
     refractive_index=np.array([1]))
 
-A = crystal_prop(
-        pump_profile.E,
-        pump,
-        signal_field,
-        idler_field,
-        vacuum_states,
-        interaction,
-        poling_period, 
-        N,
-        crystal_hologram.crystal_profile)
+# A = crystal_prop(
+#         pump_profile.E,
+#         pump,
+#         signal_field,
+#         idler_field,
+#         vacuum_states,
+#         interaction,
+#         poling_period, 
+#         N,
+#         crystal_hologram.crystal_profile)
 
-# print(pump_profile.E[0][0][0])
+print(pump_profile.E.shape)
 # print(crystal_hologram.crystal_profile)
 # print(interaction)
-print(A)
+# print(A)
