@@ -176,7 +176,7 @@ def crystal_prop(
 
     for i in range(shape.Nz):
         signal_out, signal_vac, idler_out, idler_vac = propagate_dz(
-            pump_profile,
+            pump_profile[:,:,i],
             x,
             y,
             z[i],

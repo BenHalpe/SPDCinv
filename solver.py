@@ -1206,7 +1206,7 @@ def propagate_dz(
 
     """
 
-    # pump beam:
+    # pump beam:                        >>why z and not dz?? << 
     E_pump = propagate(pump_profile, x, y, pump_k, z) * np.exp(-1j * pump_k * z)
 
     # crystal slab:
