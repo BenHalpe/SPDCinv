@@ -325,8 +325,11 @@ pump = Beam(lam=1,ctype=lambda x,T,polarization: 1, polarization="x", T=1, power
 idler_field = Field(beam = pump,dx=shape.dx,dy=shape.dy,maxZ=shape.maxZ)
 signal_field = Field(beam = pump,dx=shape.dx,dy=shape.dy,maxZ=shape.maxZ)
 
-vacuum_states = np.ones((1,1,1))
+# vacuum_states = np.ones((1,1,1))
+rand_key, subkey = random.split((1,2))
+# initialize the vacuum and interaction fields
 N=1
+vacuum_states = random.normal(subkey,(N, 2, 2, shape.Nx, shape.Ny))
 
 
 
