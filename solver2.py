@@ -17,6 +17,37 @@ c       = 2.99792458e8  # speed of light [meter/sec]
 eps0    = 8.854187817e-12  # vacuum permittivity [Farad/meter]
 h_bar   = 1.054571800e-34  # [m^2 kg / s], taken from http://physics.nist.gov/cgi-bin/cuu/Value?hbar|search_for=planck
 
+def n_KTP_Kato(
+        lam: float,
+        T: float,
+        ax: str,
+):
+    """
+    Refractive index for KTP, based on K. Kato
+
+    Parameters
+    ----------
+    lam: wavelength (lambda) [um]
+    T: Temperature [Celsius Degrees]
+    ax: polarization
+
+    Returns
+    -------
+    n: Refractive index
+
+    """
+    assert ax in ['z', 'y'], 'polarization must be either z or y'
+    dT = (T - 20)
+    if ax == "z":
+        n_no_T_dep = np.sqrt(4.59423 + 0.06206 / (lam ** 2 - 0.04763) + 110.80672 / (lam ** 2 - 86.12171))
+        dn         = (0.9221 / lam ** 3 - 2.9220 / lam ** 2 + 3.6677 / lam - 0.1897) * 1e-5 * dT
+    if ax == "y":
+        n_no_T_dep = np.sqrt(3.45018 + 0.04341 / (lam ** 2 - 0.04597) + 16.98825 / (lam ** 2 - 39.43799))
+        dn         = (0.1997 / lam ** 3 - 0.4063 / lam ** 2 + 0.5154 / lam + 0.5425) * 1e-5 * dT
+    n           = n_no_T_dep + dn
+    return n
+
+
 
 class Beam(ABC):
     """
@@ -24,7 +55,6 @@ class Beam(ABC):
     """
     def __init__(self,
                  lam: float,
-                 ctype,
                  polarization: str,
                  T: float,
                  power: float = 0):
@@ -39,7 +69,7 @@ class Beam(ABC):
         T: crystal's temperature [Celsius Degrees]
         power: beam power [watt]
         """
-
+        ctype = self.ctype = n_KTP_Kato
         self.lam          = lam
         self.n            = ctype(lam * 1e6, T, polarization)  # refractive index
         self.w            = 2 * np.pi * c / lam  # frequency
@@ -316,21 +346,58 @@ def propagate(A, x, y, k, dz):
     return Eout
 
 
+SFG_idler_wavelength    = lambda lambda_p, lambda_s: lambda_p * lambda_s / (lambda_s - lambda_p)
+I                       = lambda A, n: 2 * n * eps0 * c * np.abs(A) ** 2  # Intensity
+Power2D                 = lambda A, n, dx, dy: np.sum(I(A, n)) * dx * dy
+def fix_power(
+        A,
+        power,
+        n,
+        dx,
+        dy
+):
+    """
+    The function takes a field A and normalizes in to have the power indicated
+
+    Parameters
+    ----------
+    A
+    power
+    n
+    dx
+    dy
+
+    Returns
+    -------
+
+    """
+    output = A * np.sqrt(power) / np.sqrt(Power2D(A, n, dx, dy))
+    return output
 
 print("Hello World!")
-shape = Shape()
-pump_profile = np.ones((shape.Nx,shape.Ny))
-chi2 = np.ones((shape.Nx,shape.Ny,shape.Nz))
-pump = Beam(lam=1,ctype=lambda x,T,polarization: 1, polarization="x", T=1, power=1)
-idler_field = Field(beam = pump,dx=shape.dx,dy=shape.dy,maxZ=shape.maxZ)
-signal_field = Field(beam = pump,dx=shape.dx,dy=shape.dy,maxZ=shape.maxZ)
 
-# vacuum_states = np.ones((1,1,1))
-rand_key, subkey = random.split((1,2))
+shape = Shape()
+pump_lam = 405e-9
+pump_waist = 40e-6
+
+pump = Beam(lam=pump_lam, polarization="y", T=50, power=1e-3)
+signal = Beam(lam=2*pump_lam, polarization="y", T=50, power=1)
+idler = Beam(lam=SFG_idler_wavelength(pump.lam,signal.lam), polarization="z", T=50, power=1)
+signal_field = Field(beam = signal,dx=shape.dx,dy=shape.dy,maxZ=shape.maxZ)
+idler_field = Field(beam = idler,dx=shape.dx,dy=shape.dy,maxZ=shape.maxZ)
+
+X,Y = np.meshgrid(shape.x,shape.y)
+
+pump_profile = np.exp((-X**2-Y**2)/pump_waist**2) 
+pump_profile = fix_power(pump_profile,pump.power,pump.n,shape.dx,shape.dy)
+chi2 = np.ones((shape.Nx,shape.Ny,shape.Nz))
+
+
+vacuum_states = np.ones((1,1,1))
+# rand_key, subkey = random.split((1,2))
 # initialize the vacuum and interaction fields
 N=1
-vacuum_states = random.normal(subkey,(N, 2, 2, shape.Nx, shape.Ny))
-
+# vacuum_states = random.normal(subkey,(N, 2, 2, shape.Nx, shape.Ny))
 
 
 A = crystal_prop(
