@@ -106,7 +106,7 @@ def crystal_prop(
             idler_field.k,
             signal_field.kappa,
             idler_field.kappa,
-            chi2[:,:,i],
+            chi2[i,:,:],
             signal_out,
             signal_vac,
             idler_out,
@@ -129,9 +129,9 @@ def crystal_prop(
             (signal_out_old,signal_out),
             (signal_vac_old,signal_vac),
             (idler_out_old,idler_out),
-            (idler_out_old,idler_out)
-            
+            (idler_vac_old,idler_vac)
             )
+            print(*MSE)
     
     return signal_out, signal_vac, idler_out, idler_vac
 

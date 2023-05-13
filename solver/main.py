@@ -17,16 +17,15 @@ shape = Shape()
 pump_lam = 405e-9
 pump_waist = 40e-6
 
-pump = Beam(lam=pump_lam, polarization="y", T=50, power=1e-3)
+pump = Beam(lam=pump_lam, polarization="y", T=50, power=1e-3) 
 signal = Beam(lam=2*pump_lam, polarization="y", T=50, power=1)
 idler = Beam(lam=SFG_idler_wavelength(pump.lam,signal.lam), polarization="z", T=50, power=1)
 signal_field = Field(beam = signal,dx=shape.dx,dy=shape.dy,maxZ=shape.maxZ)
 idler_field = Field(beam = idler,dx=shape.dx,dy=shape.dy,maxZ=shape.maxZ)
 
 
-pump_profile = np.ones((shape.Nx,shape.Ny))
-chi2 = np.ones((shape.Nz,shape.Nx,shape.Ny))
-
+pump_profile = np.ones((shape.Nx,shape.Ny)) * 1e-5
+chi2 = np.zeros((shape.Nz,shape.Nx,shape.Ny))
 
 vacuum_states = np.ones((1,1,1))
 # rand_key, subkey = random.split((1,2))
@@ -47,7 +46,7 @@ A = crystal_prop(
         infer=None,
         signal_init=None,
         idler_init=None,
-        check_sol = False
+        check_sol = True
 )
-print(len(A))
-print(A[0])
+# print(len(A))
+# print(A[0])

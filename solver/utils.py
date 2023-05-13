@@ -211,11 +211,11 @@ def check_equations(
     """
     deltaK = pump_k - signal_field_k - idler_field_k
     d_dz = lambda E: (E[1] - E[0])/dz
-    dd_dxx = lambda E: (E[1][:,2:,1:-1]+E[1][:,:-2,1:-1]-2*E[1][:,1,:-1,1:-1])/dx**2
-    dd_dyy = lambda E: (E[1][:,1:-1,2:]+E[1][:,1:-1,:-2]-2*E[1][:,1:-1,1,:-1])/dy**2
+    dd_dxx = lambda E: (E[1][:,2:,1:-1]+E[1][:,:-2,1:-1]-2*E[1][:,1:-1,1:-1])/dx**2
+    dd_dyy = lambda E: (E[1][:,1:-1,2:]+E[1][:,1:-1,:-2]-2*E[1][:,1:-1,1:-1])/dy**2
     trans_laplasian=  lambda E: dd_dxx(E)+dd_dyy(E)
-    f = lambda E1,k1,kapa1,E2: (1j*d_dz(E1) + trans_laplasian(E1)/(2*k1) 
-         - kapa1*chi2[1:-1,1:-1]*pump_profile[1:-1,1:-1]*np.exp(-1j*deltaK*z)*E2[1][:,1:-1,1:-1].conj())
+    f = lambda E1,k1,kapa1,E2: (1j*d_dz(E1)[:,1:-1,1:-1] + trans_laplasian(E1)/(2*k1) 
+         - kapa1*chi2[1:-1,1:-1]*pump_profile[1:-1,1:-1]*np.exp(-1j*deltaK*z)*np.conj(E2[1][:,1:-1,1:-1]))
     
     m1 = np.mean(np.abs(f(idler_out,idler_field_k,idler_field_kappa,signal_vac))**2)
     m2 = np.mean(np.abs(f(idler_vac,idler_field_k,idler_field_kappa,signal_out))**2)
