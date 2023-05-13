@@ -23,11 +23,9 @@ idler = Beam(lam=SFG_idler_wavelength(pump.lam,signal.lam), polarization="z", T=
 signal_field = Field(beam = signal,dx=shape.dx,dy=shape.dy,maxZ=shape.maxZ)
 idler_field = Field(beam = idler,dx=shape.dx,dy=shape.dy,maxZ=shape.maxZ)
 
-X,Y = np.meshgrid(shape.x,shape.y)
 
-pump_profile = np.exp((-X**2-Y**2)/pump_waist**2) *pump_waist
-# pump_profile = fix_power(pump_profile,pump.power,pump.n,shape.dx,shape.dy)
-chi2 = np.ones((shape.Nx,shape.Ny,shape.Nz))
+pump_profile = np.ones((shape.Nx,shape.Ny))
+chi2 = np.ones((shape.Nz,shape.Nx,shape.Ny))
 
 
 vacuum_states = np.ones((1,1,1))
@@ -48,7 +46,8 @@ A = crystal_prop(
         shape,
         infer=None,
         signal_init=None,
-        idler_init=None
+        idler_init=None,
+        check_sol = False
 )
 print(len(A))
 print(A[0])

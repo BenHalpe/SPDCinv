@@ -27,7 +27,8 @@ def crystal_prop(
         shape,
         infer=None,
         signal_init=None,
-        idler_init=None
+        idler_init=None,
+        check_sol = False
 ):
     """
     Crystal propagation
@@ -51,6 +52,7 @@ def crystal_prop(
                 description for better validation
     signal_init: initial signal profile. If None, initiate to zero
     idler_init: initial idler profile. If None, initiate to zero
+    check_sol: calculte the MSE of the solution on the equation at each dz
 
     Returns: the interacting fields at the end of interaction medium
     -------
@@ -63,6 +65,8 @@ def crystal_prop(
     Nx = shape.Nx
     Ny = shape.Ny
     Nz = shape.Nz
+    dx = shape.dx
+    dy = shape.dy
     dz = shape.dz
 
 
@@ -89,6 +93,8 @@ def crystal_prop(
     idler_vac  = idler_field.vac * (vacuum_states[:, 1, 0] + 1j * vacuum_states[:, 1, 1]) / np.sqrt(2)
 
     for i in range(shape.Nz):
+        if check_sol:
+            signal_out_old, signal_vac_old, idler_out_old, idler_vac_old = signal_out, signal_vac, idler_out, idler_vac
         signal_out, signal_vac, idler_out, idler_vac = propagate_dz(
             pump_profile,
             x,
@@ -107,6 +113,25 @@ def crystal_prop(
             idler_vac,
             infer
         )
+        if check_sol and (i>0):
+            MSE = check_equations(
+            pump_profile,
+            z[i],
+            dx,
+            dy,
+            dz,
+            pump.k,
+            signal_field.k,
+            idler_field.k,
+            signal_field.kappa,
+            idler_field.kappa,
+            chi2[i,:,:],
+            (signal_out_old,signal_out),
+            (signal_vac_old,signal_vac),
+            (idler_out_old,idler_out),
+            (idler_out_old,idler_out)
+            
+            )
     
     return signal_out, signal_vac, idler_out, idler_vac
 

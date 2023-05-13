@@ -168,6 +168,7 @@ def fix_power(
 
 def check_equations(
         pump_profile,
+        z,
         dx,
         dy,
         dz,
@@ -189,6 +190,7 @@ def check_equations(
     Parameters
     ----------
     pump_profile
+    z: the position in the z direction
     dx: transverse resolution in x [m]
     dy: transverse resolution in y [m]
     dz: longitudinal resolution in z [m]
@@ -208,4 +210,18 @@ def check_equations(
     MSE = (m1,m2,m3,m4) where mi is the MSE of the i'th equation
     """
     deltaK = pump_k - signal_field_k - idler_field_k
+    d_dz = lambda E: (E[1] - E[0])/dz
+    dd_dxx = lambda E: (E[1][:,2:,1:-1]+E[1][:,:-2,1:-1]-2*E[1][:,1,:-1,1:-1])/dx**2
+    dd_dyy = lambda E: (E[1][:,1:-1,2:]+E[1][:,1:-1,:-2]-2*E[1][:,1:-1,1,:-1])/dy**2
+    trans_laplasian=  lambda E: dd_dxx(E)+dd_dyy(E)
+    f = lambda E1,k1,kapa1,E2: (1j*d_dz(E1) + trans_laplasian(E1)/(2*k1) 
+         - kapa1*chi2[1:-1,1:-1]*pump_profile[1:-1,1:-1]*np.exp(-1j*deltaK*z)*E2[1][:,1:-1,1:-1].conj())
+    
+    m1 = np.mean(np.abs(f(idler_out,idler_field_k,idler_field_kappa,signal_vac))**2)
+    m2 = np.mean(np.abs(f(idler_vac,idler_field_k,idler_field_kappa,signal_out))**2)
+    m3 = np.mean(np.abs(f(signal_out,signal_field_k,signal_field_kappa,idler_vac))**2)
+    m4 = np.mean(np.abs(f(signal_vac,signal_field_k,signal_field_kappa,idler_out))**2)
+
+    return (m1,m2,m3,m4)
+
     
