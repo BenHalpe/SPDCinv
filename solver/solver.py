@@ -132,6 +132,7 @@ def crystal_prop(
             (idler_vac_old,idler_vac)
             )
             print(*MSE)
+            # print(signal_out_old, signal_vac_old)
     
     return signal_out, signal_vac, idler_out, idler_vac
 

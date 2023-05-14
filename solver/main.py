@@ -8,6 +8,10 @@ from jax.ops import index_update
 from typing import Dict
 from utils import *
 from solver import *
+import matplotlib.pyplot as plt
+from matplotlib import cm
+
+
 
 
 
@@ -23,15 +27,19 @@ idler = Beam(lam=SFG_idler_wavelength(pump.lam,signal.lam), polarization="z", T=
 signal_field = Field(beam = signal,dx=shape.dx,dy=shape.dy,maxZ=shape.maxZ)
 idler_field = Field(beam = idler,dx=shape.dx,dy=shape.dy,maxZ=shape.maxZ)
 
+# change to gauusian, and 
+X,Y = np.meshgrid(shape.x,shape.y)
+pump_profile = Laguerre_gauss(pump_lam,pump.n,pump_waist,0,0,shape.z[0],X,Y)
+chi2 = np.ones((shape.Nz,shape.Nx,shape.Ny))*1e-10
 
-pump_profile = np.ones((shape.Nx,shape.Ny)) * 1e-5
-chi2 = np.zeros((shape.Nz,shape.Nx,shape.Ny))
-
-vacuum_states = np.ones((1,1,1))
-# rand_key, subkey = random.split((1,2))
-# initialize the vacuum and interaction fields
 N=1
+seed = 1701
+key = random.PRNGKey(seed)
+rand_key, subkey = random.split(key)
+vacuum_states = random.normal(subkey,shape=(N,2,2,shape.Nx,shape.Ny))
+# initialize the vacuum and interaction fields
 # vacuum_states = random.normal(subkey,(N, 2, 2, shape.Nx, shape.Ny))
+
 
 
 A = crystal_prop(
@@ -50,3 +58,10 @@ A = crystal_prop(
 )
 # print(len(A))
 # print(A[0])
+
+fig, ax = plt.subplots(dpi=150,subplot_kw={"projection": "3d"})
+surf = ax.plot_surface(X, Y, np.abs(A[2][0])**2, cmap=cm.coolwarm,
+                            linewidth=0, antialiased=False)
+fig.colorbar(surf, shrink=0.5, aspect=5)
+
+plt.show()

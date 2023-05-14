@@ -224,4 +224,104 @@ def check_equations(
 
     return (m1,m2,m3,m4)
 
-    
+
+def LaguerreP(p, l, x):
+    """
+    Generalized Laguerre polynomial of rank p,l L_p^|l|(x)
+
+    Parameters
+    ----------
+    l, p: order of the LG beam
+    x: matrix of x
+
+    Returns
+    -------
+    Generalized Laguerre polynomial
+    """
+    if p == 0:
+        return 1
+    elif p == 1:
+        return 1 + np.abs(l)-x
+    else:
+        return ((2*p-1+np.abs(l)-x)*LaguerreP(p-1, l, x) - (p-1+np.abs(l))*LaguerreP(p-2, l, x))/p
+
+
+
+
+def Laguerre_gauss(lam, refractive_index, W0, l, p, z, x, y, coef=None):
+    """
+    Laguerre Gauss in 2D
+
+    Parameters
+    ----------
+    lam: wavelength
+    refractive_index: refractive index
+    W0: beam waists
+    l, p: order of the LG beam
+    z: the place in z to calculate for
+    x,y: matrices of x and y
+    coef
+
+    Returns
+    -------
+    Laguerre-Gaussian beam of order l,p in 2D
+    """
+    k = 2 * np.pi * refractive_index / lam
+    z0 = np.pi * W0 ** 2 * refractive_index / lam  # Rayleigh range
+    Wz = W0 * np.sqrt(1 + (z / z0) ** 2)  # w(z), the variation of the spot size
+    r = np.sqrt(x**2 + y**2)
+    phi = np.arctan2(y, x)
+
+    invR = z / ((z ** 2) + (z0 ** 2))  # radius of curvature
+    gouy = (np.abs(l)+2*p+1)*np.arctan(z/z0)
+    if coef is None:
+        coef = np.sqrt(2*math.factorial(p)/(np.pi * math.factorial(p + np.abs(l))))
+
+    U = coef * \
+        (W0/Wz)*(r*np.sqrt(2)/Wz)**(np.abs(l)) * \
+        np.exp(-r**2 / Wz**2) * \
+        LaguerreP(p, l, 2 * r**2 / Wz**2) * \
+        np.exp(-1j * (k * r**2 / 2) * invR) * \
+        np.exp(-1j * l * phi) * \
+        np.exp(1j * gouy)
+    return U
+
+
+# interaction_params = {
+#         'pump_basis': 'HG',
+#         'pump_max_mode1': 1,
+#         'pump_max_mode2': 1,
+#         'initial_pump_coefficient': 'custom',
+#         'custom_pump_coefficient': {REAL: {0: 0., 1: 0., 2: 0., 3: 0., 4: 1., 5: 0., 6: 0., 7: 0., 8: 0.},
+#                                     IMAG: {0: 0., 1: 0., 2: 0.}},
+#         'pump_coefficient_path': None,
+#         'initial_pump_waist': 'waist_pump0',
+#         'pump_waists_path': None,
+#         'crystal_basis': 'LG',
+#         'crystal_max_mode1': 10,
+#         'crystal_max_mode2': 4,
+#         'initial_crystal_coefficient': 'custom',
+#         'custom_crystal_coefficient': {REAL: {4: 1.}, IMAG: {0: 0., 1: 0., 2: 0.}},
+#         'crystal_coefficient_path': None,
+#         'initial_crystal_waist': 'r_scale0',
+#         'crystal_waists_path': None,
+#         'lam_pump': 405e-9,
+#         'crystal_str': 'ktp',
+#         'power_pump': 1e-3,
+#         'waist_pump0': 40e-6,
+#         'r_scale0': 40e-6,
+#         'dx': 4e-6,
+#         'dy': 4e-6,
+#         'dz': 10e-6,
+#         'maxX': 180e-6,
+#         'maxY': 180e-6,
+#         'maxZ': 1e-3,
+#         'R': 0.1,
+#         'Temperature': 50,
+#         'pump_polarization': 'y',
+#         'signal_polarization': 'y',
+#         'idler_polarization': 'z',
+#         'dk_offset': 1.,
+#         'power_signal': 1.,
+#         'power_idler': 1.,
+#     }
