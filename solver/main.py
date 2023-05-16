@@ -32,8 +32,9 @@ idler_field = Field(beam = idler,dx=shape.dx,dy=shape.dy,maxZ=shape.maxZ)
 X,Y = np.meshgrid(shape.x,shape.y)
 pump_profile = Laguerre_gauss(pump_lam,pump.n,pump_waist,0,0,shape.z[0],X,Y)
 chi2 = np.ones((shape.Nz,shape.Nx,shape.Ny))*1e-12
+# chi2 = chi2.at[:8,:,:].set(0)
 
-N=100
+N=10
 seed = 1701
 key = random.PRNGKey(seed)
 rand_key, subkey = random.split(key)
