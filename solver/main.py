@@ -33,7 +33,7 @@ X,Y = np.meshgrid(shape.x,shape.y)
 pump_profile = Laguerre_gauss(pump_lam,pump.n,pump_waist,0,0,shape.z[0],X,Y)
 chi2 = np.ones((shape.Nz,shape.Nx,shape.Ny))*1e-12
 
-N=1
+N=100
 seed = 1701
 key = random.PRNGKey(seed)
 rand_key, subkey = random.split(key)
@@ -43,15 +43,15 @@ vacuum_states = random.normal(subkey,shape=(N,2,2,shape.Nx,shape.Ny))
 # vacuum_states = random.normal(subkey,(N, 2, 2, shape.Nx, shape.Ny))
 
 
-# fig, ax = plt.subplots(dpi=150,subplot_kw={"projection": "3d"})
-# surf = ax.plot_surface(X, Y, np.abs(pump_profile)**2, cmap=cm.coolwarm,
-#                             linewidth=0, antialiased=False)
-# fig.colorbar(surf, shrink=0.5, aspect=5)
-fig = plt.figure(dpi=150)
-ax = fig.add_subplot(111)
-df = pd.DataFrame(data = np.abs(pump_profile)**2)
-ax = sns.heatmap(data=df)
-plt.show()
+fig, ax = plt.subplots(dpi=150,subplot_kw={"projection": "3d"})
+surf = ax.plot_surface(X, Y, np.abs(pump_profile)**2, cmap=cm.coolwarm,
+                            linewidth=0, antialiased=False)
+fig.colorbar(surf, shrink=0.5, aspect=5)
+# fig = plt.figure(dpi=150)
+# ax = fig.add_subplot(111)
+# df = pd.DataFrame(data = np.abs(pump_profile)**2)
+# ax = sns.heatmap(data=df)
+# plt.show()
 A = crystal_prop(
         pump_profile, 
         pump,
@@ -69,18 +69,19 @@ A = crystal_prop(
 # print(len(A))
 # print(A[0])
 
-# for i in range(4):
-#         fig, ax = plt.subplots(dpi=150,subplot_kw={"projection": "3d"})
-#         surf = ax.plot_surface(X, Y, np.abs(A[i][0])**2, cmap=cm.coolwarm,linewidth=0, antialiased=False)
-#         fig.colorbar(surf, shrink=0.5, aspect=5)
-#         plt.title(f"i={i}")
-
+dict = {0:"signal out", 1:"signal vac", 2:"idler out", 3:"idler vac"}
 for i in range(4):
-        fig = plt.figure(dpi=150)
-        ax = fig.add_subplot(111)
-        df = pd.DataFrame(data = np.abs(A[i][0])**2)
-        ax = sns.heatmap(data=df)
-        plt.show()
+        fig, ax = plt.subplots(dpi=150,subplot_kw={"projection": "3d"})
+        surf = ax.plot_surface(X, Y, np.mean(np.abs(A[i])**2,axis=0), cmap=cm.coolwarm,linewidth=0, antialiased=False)
+        fig.colorbar(surf, shrink=0.5, aspect=5)
+        plt.title(f"{dict[i]}")
+plt.show()
+# for i in range(4):
+#         fig = plt.figure(dpi=150)
+#         ax = fig.add_subplot(111)
+#         df = pd.DataFrame(data = np.abs(A[i][0])**2)
+#         ax = sns.heatmap(data=df)
+#         plt.show()
 
 
 
