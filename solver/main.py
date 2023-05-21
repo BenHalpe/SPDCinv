@@ -103,7 +103,9 @@ for i in range(4):
                 surf = ax.plot_surface(X, Y, np.mean(np.abs(A[i])**2,axis=0), cmap=cm.coolwarm,linewidth=0, antialiased=False)
                 fig.colorbar(surf, shrink=0.5, aspect=5)
                 plt.title(f"{dict[i]}")
-plt.show()
+# plt.show()
+
+
 # for i in range(4):
 #         fig = plt.figure(dpi=150)
 #         ax = fig.add_subplot(111)
