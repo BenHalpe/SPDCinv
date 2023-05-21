@@ -234,8 +234,6 @@ def check_equations(
     m2 = np.mean(np.abs(f(idler_vac,idler_field_k,idler_field_kappa,signal_out))**2)/(field_unit/len_unit)**2
     m3 = np.mean(np.abs(f(signal_out,signal_field_k,signal_field_kappa,idler_vac))**2)/(field_unit/len_unit)**2
     m4 = np.mean(np.abs(f(signal_vac,signal_field_k,signal_field_kappa,idler_out))**2)/(field_unit/len_unit)**2
-    print(np.max(np.abs(idler_out[1])))
-    print(field_unit)
     # return (m1,m2,m3,m4)
     return (np.log(m1)/np.log(10),np.log(m2)/np.log(10),np.log(m3)/np.log(10),np.log(m4)/np.log(10))
 
