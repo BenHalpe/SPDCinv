@@ -101,6 +101,7 @@ class Field(ABC):
         maxZ: Crystal's length in z [m]
         """
 
+        self.beam = beam
         self.vac   = np.sqrt(h_bar * beam.w / (2 * eps0 * beam.n ** 2 * dx * dy * maxZ))
         self.kappa = 2 * 1j * beam.w ** 2 / (beam.k * c ** 2)
         self.k     = beam.k
@@ -113,7 +114,7 @@ class Shape():
             self,
             dx: float = 4e-6,
             dy: float = 4e-6,
-            dz: float = 10e-6,
+            dz: float = 10e-7,
             maxX: float = 120e-6,
             maxY: float = 120e-6,
             maxZ: float = 1e-4,
@@ -207,13 +208,13 @@ def check_equations(
 
     Returns
     -------
-    MSE = (m1,m2,m3,m4) where mi is the MSE of the i'th equation
+    MSE = (m1,m2,m3,m4) where mi is the ln of MSE of the i'th equation
     """
     deltaK = pump_k - signal_field_k - idler_field_k
-    d_dz = lambda E: (E[1] - E[0])/dz
+    d_dz = lambda E: ((E[1] - E[0])/dz)
     dd_dxx = lambda E: (E[1][:,2:,1:-1]+E[1][:,:-2,1:-1]-2*E[1][:,1:-1,1:-1])/dx**2
     dd_dyy = lambda E: (E[1][:,1:-1,2:]+E[1][:,1:-1,:-2]-2*E[1][:,1:-1,1:-1])/dy**2
-    trans_laplasian=  lambda E: dd_dxx(E)+dd_dyy(E)
+    trans_laplasian=  lambda E: (dd_dxx(E)+dd_dyy(E))
     f = lambda E1,k1,kapa1,E2: (1j*d_dz(E1)[:,1:-1,1:-1] + trans_laplasian(E1)/(2*k1) 
          - kapa1*chi2[1:-1,1:-1]*pump_profile[1:-1,1:-1]*np.exp(-1j*deltaK*z)*np.conj(E2[1][:,1:-1,1:-1]))
     

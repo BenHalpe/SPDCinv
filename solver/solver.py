@@ -92,6 +92,17 @@ def crystal_prop(
     signal_vac = signal_field.vac * (vacuum_states[:, 0, 0] + 1j * vacuum_states[:, 0, 1]) / np.sqrt(2)
     idler_vac  = idler_field.vac * (vacuum_states[:, 1, 0] + 1j * vacuum_states[:, 1, 1]) / np.sqrt(2)
 
+    if check_sol:
+        max_mode1 = 1
+        max_mode2 = 0
+        idx = (2*max_mode2 + 1) * max_mode1
+        real_coeff = np.array([1])
+        img_coeff = np.array([0])
+        pump_waist = np.array([40e-6]*idx)
+        signal_vac = profile_laguerre_gauss(real_coeff,img_coeff,pump_waist,shape,max_mode1,max_mode2,signal_field.beam,mode="pump")
+        idler_vac = profile_laguerre_gauss(real_coeff,img_coeff,pump_waist,shape,max_mode1,max_mode2,idler_field.beam,mode="pump")
+
+
     for i in range(shape.Nz):
         if check_sol:
             signal_out_old, signal_vac_old, idler_out_old, idler_vac_old = signal_out, signal_vac, idler_out, idler_vac

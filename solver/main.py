@@ -37,16 +37,16 @@ X,Y = np.meshgrid(shape.x,shape.y)
 # pump_profile = Laguerre_gauss(pump_lam,pump.n,pump_waist,0,0,shape.z[0],X,Y)
 #pump
 max_mode1 = 1
-max_mode2 = 1
-idx = 2*max_mode2 + max_mode1
-real_coeff = np.array([0,1,0])
-img_coeff = np.array([1,0,1])
+max_mode2 = 0
+idx = (2*max_mode2 + 1) * max_mode1
+real_coeff = np.array([1])
+img_coeff = np.array([0])
 pump_waist = np.array([pump_waist]*idx)
 pump_profile = profile_laguerre_gauss(real_coeff,img_coeff,pump_waist,shape,max_mode1,max_mode2,pump,mode="pump")
 # crystal
 max_mode1 = 1
 max_mode2 = 1
-idx = 2*max_mode2 + max_mode1
+idx = (2*max_mode2 + 1) * max_mode1
 real_coeff = np.array([0,1,0])
 img_coeff = np.array([1,0,1])
 r_scale0 = np.array([r_scale0]*idx)
@@ -54,19 +54,20 @@ crystal_profile = profile_laguerre_gauss(real_coeff,img_coeff,r_scale0,shape,max
 print(crystal_profile.shape)
 delta_k = pump.k - signal.k - idler.k  
 poling_period = dk_offset * delta_k
-PP = PP_crystal_slab(delta_k=delta_k, shape=shape, crystal_profile=crystal_profile, inference=None)
+crystal_profile = None
+PP = PP_crystal_slab(delta_k=delta_k, shape=shape, crystal_profile=crystal_profile)
 
 
-chi2 = PP*d33 
+# chi2 = PP*d33 
+chi2 = np.ones((shape.Nz,shape.Nx,shape.Ny))*d33
 
-N=100
+N=1
 seed = 1701
 key = random.PRNGKey(seed)
 rand_key, subkey = random.split(key)
 vacuum_states = random.normal(subkey,shape=(N,2,2,shape.Nx,shape.Ny))
-# vacuum_states = np.ones(shape=(N,2,2,shape.Nx,shape.Ny))
-# initialize the vacuum and interaction fields
-# vacuum_states = random.normal(subkey,(N, 2, 2, shape.Nx, shape.Ny))
+
+# vacuum_states = np.ones((N,2,2,shape.Nx,shape.Ny))
 
 
 fig, ax = plt.subplots(dpi=150,subplot_kw={"projection": "3d"})
@@ -97,7 +98,7 @@ A = crystal_prop(
 
 dict = {0:"signal out", 1:"signal vac", 2:"idler out", 3:"idler vac"}
 for i in range(4):
-        if (i%2==0):
+        if (i%1==0):
                 fig, ax = plt.subplots(dpi=150,subplot_kw={"projection": "3d"})
                 surf = ax.plot_surface(X, Y, np.mean(np.abs(A[i])**2,axis=0), cmap=cm.coolwarm,linewidth=0, antialiased=False)
                 fig.colorbar(surf, shrink=0.5, aspect=5)
