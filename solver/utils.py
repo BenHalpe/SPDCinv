@@ -113,7 +113,7 @@ class Shape():
             self,
             dx: float = 4e-6,
             dy: float = 4e-6,
-            dz: float = 10e-7,
+            dz: float = 10e-6,
             maxX: float = 120e-6,
             maxY: float = 120e-6,
             maxZ: float = 1e-4,
@@ -217,12 +217,13 @@ def check_equations(
     f = lambda E1,k1,kapa1,E2: (1j*d_dz(E1)[:,1:-1,1:-1] + trans_laplasian(E1)/(2*k1) 
          - kapa1*chi2[1:-1,1:-1]*pump_profile[1:-1,1:-1]*np.exp(-1j*deltaK*z)*np.conj(E2[1][:,1:-1,1:-1]))
     
-    m1 = np.mean(np.abs(f(idler_out,idler_field_k,idler_field_kappa,signal_vac))**2)
-    m2 = np.mean(np.abs(f(idler_vac,idler_field_k,idler_field_kappa,signal_out))**2)
-    m3 = np.mean(np.abs(f(signal_out,signal_field_k,signal_field_kappa,idler_vac))**2)
-    m4 = np.mean(np.abs(f(signal_vac,signal_field_k,signal_field_kappa,idler_out))**2)
+    m1 = np.mean(np.abs(f(idler_out,idler_field_k,idler_field_kappa,signal_vac))**2)/np.mean(np.abs(idler_out[1])**2)
+    m2 = np.mean(np.abs(f(idler_vac,idler_field_k,idler_field_kappa,signal_out))**2)/np.mean(np.abs(idler_vac[1])**2)
+    m3 = np.mean(np.abs(f(signal_out,signal_field_k,signal_field_kappa,idler_vac))**2)/np.mean(np.abs(signal_out[1])**2)
+    m4 = np.mean(np.abs(f(signal_vac,signal_field_k,signal_field_kappa,idler_out))**2)/np.mean(np.abs(signal_vac[1])**2)
 
-    return (m1,m2,m3,m4)
+    # return (m1,m2,m3,m4)
+    return (np.log(m1),np.log(m2),np.log(m3),np.log(m4))
 
 
 def LaguerreP(p, l, x):
