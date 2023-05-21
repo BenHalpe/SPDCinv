@@ -113,7 +113,7 @@ class Shape():
             self,
             dx: float = 4e-6,
             dy: float = 4e-6,
-            dz: float = 10e-6,
+            dz: float = 10e-7,
             maxX: float = 120e-6,
             maxY: float = 120e-6,
             maxZ: float = 1e-4,
@@ -285,6 +285,82 @@ def Laguerre_gauss(lam, refractive_index, W0, l, p, z, x, y, coef=None):
         np.exp(-1j * l * phi) * \
         np.exp(1j * gouy)
     return U
+
+def profile_laguerre_gauss(
+            pump_coeffs_real,
+            pump_coeffs_imag,
+            waist_pump,
+            shape,
+            max_mode1,
+            max_mode2,
+            beam,
+            mode
+    ):
+        coeffs = pump_coeffs_real + 1j * pump_coeffs_imag
+        if mode == "pump":
+            [X, Y] = np.meshgrid(shape.x, shape.y)
+            Z = 0
+        elif mode == "crystal":
+            [Z, X, Y] = np.meshgrid(shape.z,shape.x, shape.y, indexing='ij')
+        
+        pump_profile = np.zeros((shape.Nx, shape.Ny))
+        idx = 0
+        for p in range(max_mode1):
+            for l in range(-max_mode2, max_mode2 + 1):
+                pump_profile += coeffs[idx] * \
+                                Laguerre_gauss(beam.lam, beam.n,
+                                               waist_pump[idx] , l, p, Z, X, Y)
+                idx += 1
+
+        pump_profile = fix_power(pump_profile, beam.power, beam.n,
+                                 shape.dx, shape.dy)
+        return pump_profile
+
+
+
+def PP_crystal_slab(
+        delta_k,
+        shape,
+        crystal_profile,
+        inference=None
+):
+    """
+    Periodically poled crystal slab.
+    create the crystal slab at point z in the crystal, for poling period 2pi/delta_k
+
+    Parameters
+    ----------
+    delta_k: k mismatch
+    z: longitudinal point for generating poling pattern
+    crystal_profile: Crystal 3D hologram (if None, ignore)
+    inference: (True/False) if in inference mode, we include more coefficients in the poling
+                description for better validation
+
+    Returns Periodically poled crystal slab at point z
+    -------
+
+    """
+    [Z, X, Y] = np.meshgrid(shape.z,shape.x, shape.y, indexing='ij')
+    if crystal_profile is None:
+        return np.sign(np.cos(np.abs(delta_k) * Z))
+    else:
+        magnitude = np.abs(crystal_profile)
+        phase = np.angle(crystal_profile)
+        if inference is not None:
+            max_order_fourier = 20
+            poling = 0
+            magnitude = magnitude / magnitude.max()
+            DutyCycle = np.arcsin(magnitude) / np.pi
+            for m in range(max_order_fourier):
+                if m == 0:
+                    poling = poling + 2 * DutyCycle - 1
+                else:
+                    poling = poling + (2 / (m * np.pi)) * \
+                             np.sin(m * pi * DutyCycle) * 2 * np.cos(m * phase + m * np.abs(delta_k) * Z)
+            return poling
+        else:
+            return (2 / np.pi) * np.exp(1j * (np.abs(delta_k) * Z)) * magnitude * np.exp(1j * phase)
+
 
 
 # interaction_params = {
