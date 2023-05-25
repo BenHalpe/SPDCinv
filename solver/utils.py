@@ -183,6 +183,10 @@ def check_equations(
         signal_vac,
         idler_out,
         idler_vac,
+        dEs_out_dz, 
+        dEs_vac_dz, 
+        dEi_out_dz, 
+        dEi_vac_dz
 ):
     """
     Check if the second harmonic coupled wave equations holds and return the MSE of each 
@@ -201,10 +205,14 @@ def check_equations(
     signal_field_kappa: signal kappa
     idler_field_kappa: idler kappa
     chi2: scaler array of chi2 in the crystal
-    signal_out: tuple ofcurrent signal profile and previous profile
-    signal_vac: tuple ofcurrent signal vacuum state profile and previous profile
-    idler_out: tuple ofcurrent idler profile and previous profile
-    idler_vac: tuple ofcurrent idler vacuum state profile and previous profile
+    signal_out: signal profile and previous profile
+    signal_vac: signal vacuum state profile and previous profile
+    idler_out: idler profile and previous profile
+    idler_vac: idler vacuum state profile and previous profile
+    dEs_out_dz: derivative of signal out field in z direction
+    dEs_vac_dz: derivative of signal vac field in z direction
+    dEi_out_dz: derivative of idler out field in z direction
+    dEi_vac_dz: derivative of idler vac field in z direction
 
     Returns
     -------
@@ -223,17 +231,16 @@ def check_equations(
  
     # with out normalization
     deltaK = pump_k - signal_field_k - idler_field_k
-    d_dz = lambda E: ((E[1] - E[0])/dz)
-    dd_dxx = lambda E: (E[1][:,2:,1:-1]+E[1][:,:-2,1:-1]-2*E[1][:,1:-1,1:-1])/dx**2
-    dd_dyy = lambda E: (E[1][:,1:-1,2:]+E[1][:,1:-1,:-2]-2*E[1][:,1:-1,1:-1])/dy**2
+    dd_dxx = lambda E: (E[:,2:,1:-1]+E[:,:-2,1:-1]-2*E[:,1:-1,1:-1])/dx**2
+    dd_dyy = lambda E: (E[:,1:-1,2:]+E[:,1:-1,:-2]-2*E[:,1:-1,1:-1])/dy**2
     trans_laplasian=  lambda E: (dd_dxx(E)+dd_dyy(E))
-    f = lambda E1,k1,kapa1,E2: (1j*d_dz(E1)[:,1:-1,1:-1] + trans_laplasian(E1)/(2*k1) 
-         - kapa1*chi2[1:-1,1:-1]*pump_profile[1:-1,1:-1]*np.exp(-1j*deltaK*z)*np.conj(E2[1][:,1:-1,1:-1]))
+    f = lambda dE1_dz,E1,k1,kapa1,E2: (1j*dE1_dz[:,1:-1,1:-1] + trans_laplasian(E1)/(2*k1) 
+         - kapa1*chi2[1:-1,1:-1]*pump_profile[1:-1,1:-1]*np.exp(-1j*deltaK*z)*np.conj(E2[:,1:-1,1:-1]))/dE1_dz[:,1:-1,1:-1]
     
-    m1 = np.mean(np.abs(f(idler_out,idler_field_k,idler_field_kappa,signal_vac))**2)/(field_unit/len_unit)**2
-    m2 = np.mean(np.abs(f(idler_vac,idler_field_k,idler_field_kappa,signal_out))**2)/(field_unit/len_unit)**2
-    m3 = np.mean(np.abs(f(signal_out,signal_field_k,signal_field_kappa,idler_vac))**2)/(field_unit/len_unit)**2
-    m4 = np.mean(np.abs(f(signal_vac,signal_field_k,signal_field_kappa,idler_out))**2)/(field_unit/len_unit)**2
+    m1 = np.mean(np.abs(f(dEi_out_dz,idler_out,idler_field_k,idler_field_kappa,signal_vac))**2)
+    m2 = np.mean(np.abs(f(dEi_vac_dz,idler_vac,idler_field_k,idler_field_kappa,signal_out))**2)
+    m3 = np.mean(np.abs(f(dEs_out_dz,signal_out,signal_field_k,signal_field_kappa,idler_vac))**2)
+    m4 = np.mean(np.abs(f(dEs_vac_dz,signal_vac,signal_field_k,signal_field_kappa,idler_out))**2)
     # return (m1,m2,m3,m4)
     return (np.log(m1)/np.log(10),np.log(m2)/np.log(10),np.log(m3)/np.log(10),np.log(m4)/np.log(10))
 

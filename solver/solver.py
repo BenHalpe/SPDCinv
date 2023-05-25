@@ -104,9 +104,7 @@ def crystal_prop(
 
 
     for i in range(shape.Nz):
-        if check_sol:
-            signal_out_old, signal_vac_old, idler_out_old, idler_vac_old = signal_out, signal_vac, idler_out, idler_vac
-        signal_out, signal_vac, idler_out, idler_vac = propagate_dz(
+        signal_out, signal_vac, idler_out, idler_vac, dEs_out_dz, dEs_vac_dz, dEi_out_dz, dEi_vac_dz = propagate_dz(
             pump_profile,
             x,
             y,
@@ -137,10 +135,14 @@ def crystal_prop(
             signal_field.kappa,
             idler_field.kappa,
             chi2[i,:,:],
-            (signal_out_old,signal_out),
-            (signal_vac_old,signal_vac),
-            (idler_out_old,idler_out),
-            (idler_vac_old,idler_vac)
+            signal_out,
+            signal_vac,
+            idler_out,
+            idler_vac,
+            dEs_out_dz, 
+            dEs_vac_dz, 
+            dEi_out_dz, 
+            dEi_vac_dz
             )
             print(*MSE)
             # print(signal_out_old, signal_vac_old)
@@ -221,7 +223,10 @@ def propagate_dz(
     idler_out = propagate(idler_out, x, y, idler_field_k, dz) * np.exp(-1j * idler_field_k * dz)
     idler_vac = propagate(idler_vac, x, y, idler_field_k, dz) * np.exp(-1j * idler_field_k * dz)
 
-    return signal_out, signal_vac, idler_out, idler_vac
+    return signal_out, signal_vac, idler_out, idler_vac, dEs_out_dz, dEs_vac_dz, dEi_out_dz, dEi_vac_dz
+
+
+    # return signal_out, signal_vac, idler_out, idler_vac
 
 
 @jit

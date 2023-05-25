@@ -58,8 +58,8 @@ crystal_profile = None
 PP = PP_crystal_slab(delta_k=delta_k, shape=shape, crystal_profile=crystal_profile)
 
 
-# chi2 = PP*d33 
-chi2 = np.ones((shape.Nz,shape.Nx,shape.Ny))*d33
+chi2 = PP*d33 
+# chi2 = np.ones((shape.Nz,shape.Nx,shape.Ny))*d33
 
 N=1
 seed = 1701
