@@ -335,7 +335,7 @@ def profile_laguerre_gauss(
         coeffs = pump_coeffs_real + 1j * pump_coeffs_imag
         if mode == "pump":
             [X, Y] = np.meshgrid(shape.x, shape.y)
-            Z = 0
+            Z = shape.z[0]
         elif mode == "crystal":
             [Z, X, Y] = np.meshgrid(shape.z,shape.x, shape.y, indexing='ij')
         
@@ -382,20 +382,7 @@ def PP_crystal_slab(
     else:
         magnitude = np.abs(crystal_profile)
         phase = np.angle(crystal_profile)
-        if inference is not None:
-            max_order_fourier = 20
-            poling = 0
-            magnitude = magnitude / magnitude.max()
-            DutyCycle = np.arcsin(magnitude) / np.pi
-            for m in range(max_order_fourier):
-                if m == 0:
-                    poling = poling + 2 * DutyCycle - 1
-                else:
-                    poling = poling + (2 / (m * np.pi)) * \
-                             np.sin(m * pi * DutyCycle) * 2 * np.cos(m * phase + m * np.abs(delta_k) * Z)
-            return poling
-        else:
-            return (2 / np.pi) * np.exp(1j * (np.abs(delta_k) * Z)) * magnitude * np.exp(1j * phase)
+        return (2 / np.pi) * np.exp(1j * (np.abs(delta_k) * Z)) * magnitude * np.exp(1j * phase)
 
 
 
