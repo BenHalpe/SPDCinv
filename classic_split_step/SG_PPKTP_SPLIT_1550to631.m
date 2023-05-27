@@ -17,7 +17,7 @@ eps0    = 8.854187817e-12; % the vacuum permittivity, in Farad/meter.
 I       = @(A,n) 2.*n.*eps0.*c.*abs(A).^2;  
 h_bar   = 1.054571800e-34; % Units are m^2 kg / s, taken from http://physics.nist.gov/cgi-bin/cuu/Value?hbar|search_for=planck
 
-dz=10e-7; dx=2e-6; dy=2e-6; % this was 0.1 um X 0.5 um X 0.5 um
+dz=10e-6; dx=2e-6; dy=2e-6; % this was 0.1 um X 0.5 um X 0.5 um
 MaxX=120e-6; x=-MaxX:dx:MaxX-dx;
 MaxY=120e-6; y=-MaxY:dy:MaxY-dy;
 MaxZ=1e-4;
@@ -46,28 +46,28 @@ PumpPower = 1e-3; %Alphalas: Peak Power 1 MW = 0.1 W * 10 ms / 1 ns
 
 
 %pump wave
-n_p = nz_KTP_kato(lambda_p*1e6,T);%n_ktp_z(lambda_p*1e6);
-w_p = 2*pi*c/lambda_p;
-k_p= 2*pi*n_p/lambda_p;
+n_p = 1.8406305313110352;
+w_p = 4650991524219391.0;
+k_p= 28555612.0;
 b_p = omega0_p^2*k_p;
 
 %idler wave
-n_i = nz_KTP_kato(lambda_i*1e6,T);%n_ktp_z(lambda_i*1e6);
-w_i = 2*pi*c/lambda_i;
-k_i= 2*pi*n_i/lambda_i;
+n_i = 1.8443180322647095;
+w_i = 2325495762109695.0;
+k_i=14306410.0;
 b_i = omega0_i^2*k_i;
 
 %signal wave
-n_s = nz_KTP_kato(lambda_s*1e6,T);%n_ktp_z(lambda_s*1e6);
-w_s = 2*pi*c/lambda_s;
-k_s = 2*pi*n_s/lambda_s;
+n_s = 1.7562085390090942;
+w_s = 2325495762109695.5;
+k_s =13622943.0;
 b_s = omega0_s^2*k_s;
 
 delta_k= k_p - k_s - k_i;
 Lambda=abs(2*pi/delta_k);
 
 
-Z=0:dz:MaxZ-dz;
+Z= -MaxZ/2:dz:MaxZ/2 - dz
 %crystal parameters 
 Poling_period=delta_k;
 PP = cos(abs(delta_k) * Z);
@@ -104,18 +104,19 @@ E_p=zeros(size(X));
 
             E_p =(E0(PumpPower,n_p,omega0_p)*tau_p)*exp(-(((X-PumpOffsetX).^2./(omega0_p)^2+(Y).^2./(omega0_p)^2).*tau_p)).*exp(1i*k_p*(z_tag - FocusZ));
             if n==1
-             E_i_vac =E_p;
-             E_s_vac =E_p;
+             E_i_vac =(E0(1,n_i,omega0_p)*tau_p)*exp(-(((X-PumpOffsetX).^2./(omega0_p)^2+(Y).^2./(omega0_p)^2).*tau_p)).*exp(1i*k_i*(z_tag - FocusZ));
+             E_s_vac =(E0(1,n_s,omega0_p)*tau_p)*exp(-(((X-PumpOffsetX).^2./(omega0_p)^2+(Y).^2./(omega0_p)^2).*tau_p)).*exp(1i*k_s*(z_tag - FocusZ));
             end
 
             %generate the crystal slab at this Z
             PP_xy=ones(length(X),width(X),1)*PP(:,n)';
+            
 
             %Non-linear equations:
             dEi_out_dz=kappa_i.*PP_xy.*E_p.*conj(E_s_vac);%*exp(-1i*delta_k*z_tag);
             dEi_vac_dz=kappa_i.*PP_xy.*E_p.*conj(E_s_out);%*exp(-1i*delta_k*z_tag);
             dEs_out_dz=kappa_s.*PP_xy.*E_p.*conj(E_i_vac);%*exp(1i*delta_k*z_tag);
-            dEs_vac_dz=kappa_s.*PP_xy.*E_p.*(E_i_out);%*exp(1i*delta_k*z_tag);
+            dEs_vac_dz=kappa_s.*PP_xy.*E_p.*conj(E_i_out);%*exp(1i*delta_k*z_tag);
             %Add the non-linear part
             E_i_out=E_i_out+dEi_out_dz*dz; % update  
             E_i_vac=E_i_vac+dEi_vac_dz*dz; 
@@ -132,7 +133,7 @@ E_p=zeros(size(X));
             dd_dxx = @(E) (E(3:end,2:end-1)+E(1:end-2,2:end-1)-2*E(2:end-1,2:end-1))/dx^2;
             dd_dyy = @(E) (E(2:end-1,3:end)+E(2:end-1,1:end-2)-2*E(2:end-1,2:end-1))/dy^2;
             trans_laplasian=  @(E) (dd_dxx(E)+dd_dyy(E));
-            f = @(dE1_dz,E1,k1,kapa1,E2) (1j*dE1_dz(2:end-1,2:end-1) + trans_laplasian(E1)/(2*k1) - kapa1*PP_xy(2:end-1,2:end-1).*E_p(2:end-1,2:end-1)*exp(-1j*delta_k*z_tag).*conj(E2(2:end-1,2:end-1)))./dE1_dz(2:end-1,2:end-1);
+            f = @(dE1_dz,E1,k1,kapa1,E2) (1i*dE1_dz(2:end-1,2:end-1) + trans_laplasian(E1)/(2*k1) - kapa1*PP_xy(2:end-1,2:end-1).*E_p(2:end-1,2:end-1)*exp(-1i*delta_k*z_tag).*conj(E2(2:end-1,2:end-1)))./dE1_dz(2:end-1,2:end-1);
             
             m1 = mean(mean(abs(f(dEi_out_dz,E_i_out,k_i,kappa_i,E_s_vac))^2));
             m2 = mean(mean(abs(f(dEi_vac_dz,E_i_vac,k_i,kappa_i,E_s_out))^2));

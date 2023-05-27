@@ -51,7 +51,6 @@ real_coeff = np.array([0,1,0])
 img_coeff = np.array([1,0,1])
 r_scale0 = np.array([r_scale0]*idx)
 crystal_profile = profile_laguerre_gauss(real_coeff,img_coeff,r_scale0,shape,max_mode1,max_mode2,signal,mode="crystal")
-print(crystal_profile.shape)
 delta_k = pump.k - signal.k - idler.k  
 poling_period = dk_offset * delta_k
 crystal_profile = None
@@ -79,18 +78,16 @@ fig.colorbar(surf, shrink=0.5, aspect=5)
 # df = pd.DataFrame(data = np.abs(pump_profile)**2)
 # ax = sns.heatmap(data=df)
 # plt.show()
+
 A = crystal_prop(
-        pump_profile, 
-        pump,
-        signal_field,
-        idler_field,
-        vacuum_states,
-        chi2, 
-        N,
-        shape,
-        infer=None,
-        signal_init=None,
-        idler_init=None,
+        pump_profile = pump_profile, 
+        pump = pump,
+        signal_field = signal_field, 
+        idler_field = idler_field,
+        vacuum_states = vacuum_states,
+        chi2 = chi2, 
+        N = N,
+        shape = shape,
         check_sol = True
 )
 # print(len(A))

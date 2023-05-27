@@ -92,64 +92,54 @@ def crystal_prop(
     signal_vac = signal_field.vac * (vacuum_states[:, 0, 0] + 1j * vacuum_states[:, 0, 1]) / np.sqrt(2)
     idler_vac  = idler_field.vac * (vacuum_states[:, 1, 0] + 1j * vacuum_states[:, 1, 1]) / np.sqrt(2)
 
-    if check_sol:
-        signal_vac = pump_profile
-        idler_vac = pump_profile
+    X,Y = np.meshgrid(x,y)
+    omega0_p= 40e-6 #pump waist
+    E0= lambda P,n,W0: np.sqrt(P/(2*n*c*eps0*pi*W0**2)) 
+ 
 
+
+    
 
     for i in range(shape.Nz):
-        signal_out, signal_vac, idler_out, idler_vac, dEs_out_dz, dEs_vac_dz, dEi_out_dz, dEi_vac_dz = propagate_dz(
-            pump_profile,
-            x,
-            y,
-            z[i],
-            dz,
-            pump.k,
-            signal_field.k,
-            idler_field.k,
-            signal_field.kappa,
-            idler_field.kappa,
-            chi2[i,:,:],
-            signal_out,
-            signal_vac,
-            idler_out,
-            idler_vac,
-            infer
+        xi_p=2*(z[i])/(omega0_p**2*pump.k)
+        tau_p=1/(1+1j*xi_p)
+        E_p =(E0(pump.power,pump.n,omega0_p)*tau_p)*np.exp(-(((X)**2/(omega0_p)**2+(Y)**2/(omega0_p)**2)*tau_p))*np.exp(1j*pump.k*z[i])
+        if check_sol and i==0:
+            signal_vac = np.resize((E0(1,pump.n,omega0_p)*tau_p)*np.exp(-(((X)**2/(omega0_p)**2+(Y)**2/(omega0_p)**2)*tau_p))*np.exp(1j*signal_field.k*z[i]),(1,shape.Nx,shape.Ny))
+            idler_vac = np.resize((E0(1,pump.n,omega0_p)*tau_p)*np.exp(-(((X)**2/(omega0_p)**2+(Y)**2/(omega0_p)**2)*tau_p))*np.exp(1j*idler_field.k*z[i]),(1,shape.Nx,shape.Ny))
+
+        signal_out, signal_vac, idler_out, idler_vac = propagate_dz(
+            pump_profile =  E_p,
+            x = x,
+            y = y,
+            z = z[i],
+            dx = dx,
+            dy = dy,
+            dz = dz,
+            pump_k = pump.k,
+            signal_field_k = signal_field.k,
+            idler_field_k = idler_field.k,
+            signal_field_kappa = signal_field.kappa,
+            idler_field_kappa = idler_field.kappa,
+            chi2 = chi2[i,:,:],
+            signal_out = signal_out,
+            signal_vac = signal_vac,
+            idler_out = idler_out,
+            idler_vac = idler_vac,
         )
-        if check_sol and (i>0):
-            MSE = check_equations(
-            pump_profile,
-            z[i],
-            dx,
-            dy,
-            dz,
-            pump.k,
-            signal_field.k,
-            idler_field.k,
-            signal_field.kappa,
-            idler_field.kappa,
-            chi2[i,:,:],
-            signal_out,
-            signal_vac,
-            idler_out,
-            idler_vac,
-            dEs_out_dz, 
-            dEs_vac_dz, 
-            dEi_out_dz, 
-            dEi_vac_dz
-            )
-            print(*MSE)
-            # print(signal_out_old, signal_vac_old)
+            
     
     return signal_out, signal_vac, idler_out, idler_vac
 
 
-@jit
+#@jit
 def propagate_dz(
         pump_profile,
         x,
         y,
         z,
+        dx,
+        dy,
         dz,
         pump_k,
         signal_field_k,
@@ -161,7 +151,6 @@ def propagate_dz(
         signal_vac,
         idler_out,
         idler_vac,
-        infer=None,
 ):
     """
     Single step of crystal propagation
@@ -193,31 +182,55 @@ def propagate_dz(
     -------
 
     """
-
     # pump beam:
-    E_pump = propagate(pump_profile, x, y, pump_k, z) * np.exp(-1j * pump_k * z)
+    # E_pump = propagate(pump_profile, x, y, pump_k, z) * np.exp(-1j * pump_k * z)
+    E_pump = pump_profile
 
 
     # coupled wave equations - split step
-    # signal:
+    dEi_out_dz = idler_field_kappa * chi2 * E_pump * np.conj(signal_vac)
+    dEi_vac_dz = idler_field_kappa * chi2 * E_pump * np.conj(signal_out)
     dEs_out_dz = signal_field_kappa * chi2 * E_pump * np.conj(idler_vac)
     dEs_vac_dz = signal_field_kappa * chi2 * E_pump * np.conj(idler_out)
+
+    idler_out = idler_out + dEi_out_dz * dz
+    idler_vac = idler_vac + dEi_vac_dz * dz
     signal_out = signal_out + dEs_out_dz * dz
     signal_vac = signal_vac + dEs_vac_dz * dz
 
     # idler:
-    dEi_out_dz = idler_field_kappa * chi2 * E_pump * np.conj(signal_vac)
-    dEi_vac_dz = idler_field_kappa * chi2 * E_pump * np.conj(signal_out)
-    idler_out = idler_out + dEi_out_dz * dz
-    idler_vac = idler_vac + dEi_vac_dz * dz
+    
 
     # propagate
     signal_out = propagate(signal_out, x, y, signal_field_k, dz) * np.exp(-1j * signal_field_k * dz)
     signal_vac = propagate(signal_vac, x, y, signal_field_k, dz) * np.exp(-1j * signal_field_k * dz)
     idler_out = propagate(idler_out, x, y, idler_field_k, dz) * np.exp(-1j * idler_field_k * dz)
     idler_vac = propagate(idler_vac, x, y, idler_field_k, dz) * np.exp(-1j * idler_field_k * dz)
+    MSE = check_equations(
+            pump_profile = E_pump,
+            z = z,
+            dx = dx,
+            dy = dy,
+            dz = dz,
+            pump_k = pump_k,
+            signal_field_k = signal_field_k,
+            idler_field_k = idler_field_k,
+            signal_field_kappa = signal_field_kappa,
+            idler_field_kappa =idler_field_kappa,
+            chi2 = chi2,
+            signal_out = signal_out,
+            signal_vac = signal_vac,
+            idler_out = idler_out,
+            idler_vac = idler_vac,
+            dEs_out_dz = dEs_out_dz, 
+            dEs_vac_dz = dEs_vac_dz, 
+            dEi_out_dz = dEi_out_dz, 
+            dEi_vac_dz = dEi_vac_dz
+            )
+    print(*MSE)
+    # print(signal_out_old, signal_vac_old)
 
-    return signal_out, signal_vac, idler_out, idler_vac, dEs_out_dz, dEs_vac_dz, dEi_out_dz, dEi_vac_dz
+    return signal_out, signal_vac, idler_out, idler_vac
 
 
     # return signal_out, signal_vac, idler_out, idler_vac
